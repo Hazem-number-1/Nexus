@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS - Gaming Social Network</title>
+    <style>
+        :root {
+            --bg-primary: #0a0c10;
+            --bg-card: rgba(18, 22, 31, 0.95);
+            --neon-blue: #00f0ff;
+            --neon-purple: #7000ff;
+            --neon-pink: #ff007f;
+            --text-main: #f0f4f8;
+            --text-muted: #8a99ad;
+            --border-glow: rgba(0, 240, 255, 0.25);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body { 
+            background: var(--bg-primary); 
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(112, 0, 255, 0.2) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(0, 240, 255, 0.15) 0%, transparent 40%);
+            color: var(--text-main); 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+        }
+
+        .hidden { display: none !important; }
+        
+        /* Auth Screen */
+        #authOverlay { 
+            position: fixed; inset: 0; 
+            background: rgba(10, 12, 16, 0.95); 
+            backdrop-filter: blur(12px);
+            z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; 
+        }
+        .auth-card { 
+            background: var(--bg-card); 
+            border: 1px solid var(--border-glow);
+            box-shadow: 0 0 35px rgba(0, 240, 255, 0.2);
+            padding: 35px; border-radius: 20px; max-width: 440px; width: 100%; 
+        }
+        .auth-title { 
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-align: center; font-size: 38px; font-weight: 900; letter-spacing: 2px; margin-bottom: 5px; 
+        }
+        .auth-subtitle { text-align: center; color: var(--text-muted); font-size: 13px; margin-bottom: 25px; }
+        
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 6px; color: var(--neon-blue); letter-spacing: 1px; }
+        .input-group input { 
+            width: 100%; padding: 12px; border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 10px; font-size: 14px; background: rgba(0,0,0,0.5); color: white; outline: none; 
+            transition: 0.3s;
+        }
+        .input-group input:focus { border-color: var(--neon-blue); box-shadow: 0 0 12px rgba(0, 240, 255, 0.4); }
+
+        .btn { 
+            width: 100%; padding: 12px; border: none; border-radius: 10px; font-weight: bold; font-size: 13px; 
+            cursor: pointer; transition: 0.3s; margin-top: 8px; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn-neon { 
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple)); 
+            color: white; box-shadow: 0 0 15px rgba(0, 240, 255, 0.4); 
+        }
+        .btn-neon:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(0, 240, 255, 0.7); }
+        .btn-dark { background: rgba(255,255,255,0.08); color: var(--text-main); border: 1px solid rgba(255,255,255,0.2); }
+        .btn-dark:hover { background: rgba(255,255,255,0.2); }
+        .btn-emerald { background: transparent; border: 1px solid var(--neon-blue); color: var(--neon-blue); }
+        .btn-emerald:hover { background: rgba(0,240,255,0.1); }
+
+        /* Header */
+        header { 
+            position: sticky; top: 0; background: rgba(10, 12, 16, 0.85); 
+            backdrop-filter: blur(10px); border-bottom: 1px solid var(--border-glow); 
+            height: 65px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; z-index: 40; 
+        }
+        .logo { 
+            font-size: 26px; font-weight: 900; letter-spacing: 3px;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-pink));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; cursor: pointer; 
+        }
+        .user-pill { 
+            display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); 
+            padding: 6px 14px; border-radius: 30px; border: 1px solid var(--border-glow); cursor: pointer; 
+            transition: 0.3s;
+        }
+        .user-pill:hover { border-color: var(--neon-pink); box-shadow: 0 0 10px rgba(255, 0, 127, 0.4); }
+        .avatar-box { width: 34px; height: 34px; border-radius: 50%; overflow: hidden; border: 1px solid var(--neon-blue); background: var(--neon-purple); display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; }
+
+        /* App Layout */
+        .app-container { max-width: 1050px; width: 100%; margin: 0 auto; display: flex; flex: 1; padding: 20px; gap: 24px; }
+        aside { width: 230px; flex-shrink: 0; }
+        .nav-item { 
+            padding: 14px 16px; border-radius: 12px; font-weight: bold; font-size: 14px; color: var(--text-muted); 
+            cursor: pointer; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; transition: 0.3s;
+            border: 1px solid transparent;
+        }
+        .nav-item:hover { background: rgba(255,255,255,0.05); color: var(--text-main); }
+        .nav-item.active { 
+            background: linear-gradient(90deg, rgba(0, 240, 255, 0.15), rgba(112, 0, 255, 0.15)); 
+            color: var(--neon-blue); border-color: var(--border-glow); box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);
+        }
+
+        main { flex: 1; max-width: 650px; }
+        .card { 
+            background: var(--bg-card); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.08); 
+            padding: 20px; margin-bottom: 20px; backdrop-filter: blur(10px); transition: 0.3s;
+        }
+        .card:hover { border-color: rgba(0, 240, 255, 0.3); }
+
+        textarea { 
+            width: 100%; height: 80px; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; 
+            padding: 12px; font-size: 13px; outline: none; resize: none; background: rgba(0, 0, 0, 0.4); color: white;
+            transition: 0.3s;
+        }
+        textarea:focus { border-color: var(--neon-blue); background: rgba(0, 0, 0, 0.6); }
+        .post-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px; }
+
+        .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .post-author { display: flex; align-items: center; gap: 12px; }
+        .post-content { font-size: 14px; line-height: 1.6; margin-bottom: 14px; color: #e1e7ed; }
+        .post-media { width: 100%; max-height: 380px; object-fit: contain; background: #000; border-radius: 12px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.1); }
+        
+        .post-footer-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px; margin-top: 10px; }
+        .action-btn { 
+            background: none; border: none; padding: 10px; font-size: 13px; font-weight: bold; 
+            color: var(--text-muted); cursor: pointer; border-radius: 8px; transition: 0.2s;
+        }
+        .action-btn:hover { background: rgba(255,255,255,0.05); color: var(--text-main); }
+        .action-btn.liked { color: var(--neon-pink); text-shadow: 0 0 8px rgba(255, 0, 127, 0.5); }
+
+        .comments-section { background: rgba(0, 0, 0, 0.4); padding: 12px; border-radius: 12px; margin-top: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .comment-box { display: flex; gap: 8px; margin-bottom: 10px; }
+        .comment-box input { flex: 1; padding: 8px 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; font-size: 12px; outline: none; background: rgba(255,255,255,0.05); color: white; }
+        .comment-item { background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 8px; font-size: 12px; margin-bottom: 6px; border-right: 2px solid var(--neon-purple); }
+
+        .rules-box { font-size: 11px; color: var(--text-muted); background: rgba(0,0,0,0.4); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); margin-top: 10px; }
+        .rule-ok { color: #10b981; font-weight: bold; }
+        .rule-fail { color: #ef4444; }
+        
+        .page-title { font-size: 18px; font-weight: bold; margin-bottom: 16px; color: var(--neon-blue); letter-spacing: 1px; }
+    </style>
+</head>
+<body>
+
+    <!-- 1. Auth Screen -->
+    <div id="authOverlay">
+        <div class="auth-card">
+            <div class="auth-title">NEXUS</div>
+            <div class="auth-subtitle" id="authSubtitle">سجّل دخولك للوصول إلى الشبكة</div>
+
+            <div class="input-group hidden" id="nameGroup">
+                <label>اسم المحارب</label>
+                <input type="text" id="authName" placeholder="مثال: GamerX">
+            </div>
+            
+            <div class="input-group">
+                <label>البريد الإلكتروني</label>
+                <input type="email" id="authEmail" placeholder="player@nexus.gg">
+            </div>
+
+            <div class="input-group">
+                <label>رمز الدخول</label>
+                <input type="password" id="authPass" oninput="checkPassword()" placeholder="••••••••">
+            </div>
+
+            <div id="passRules" class="rules-box hidden">
+                <div id="rLen" class="rule-fail">✖ 8 أحرف على الأقل</div>
+                <div id="rNum" class="rule-fail">✖ تحتوي على رقم</div>
+                <div id="rSpec" class="rule-fail">✖ تحتوي على رمز (@!#$)</div>
+            </div>
+
+            <button type="button" class="btn btn-neon" id="authBtn" onclick="submitAuth()">تسجيل الدخول</button>
+            
+            <hr style="margin: 16px 0; border: none; border-top: 1px solid rgba(255,255,255,0.1);">
+
+            <!-- الزر التجريبي المباشر بدون تعقيدات -->
+            <button type="button" class="btn btn-dark" id="demoBtn" onclick="loginDemoDirect()">🎮 دخول سريع بحساب تجريبي</button>
+            <button type="button" class="btn btn-emerald" id="toggleBtn" onclick="toggleAuthMode()">إنشاء حساب جديد</button>
+        </div>
+    </div>
+
+    <!-- 2. Main App -->
+    <div id="mainApp" class="hidden">
+        <header>
+            <div class="logo" onclick="switchTab('feed')">NEXUS</div>
+            <div class="user-pill" onclick="logout()">
+                <div id="userAvatar" class="avatar-box">C</div>
+                <span id="userName" style="font-size: 13px; font-weight: bold; color: var(--text-main);">CyberPlayer</span>
+                <span style="font-size: 11px; color: var(--neon-pink); font-weight: bold;">(خروج 🚪)</span>
+            </div>
+        </header>
+
+        <div class="app-container">
+            <aside>
+                <div class="nav-item active" id="nav-feed" onclick="switchTab('feed')">⚡ الرئيسية</div>
+                <div class="nav-item" id="nav-profile" onclick="switchTab('profile')">👤 ملفي الشخصي</div>
+                <div class="nav-item" id="nav-saved" onclick="switchTab('saved')">🔖 العناصر المحفوظة</div>
+            </aside>
+
+            <main>
+                <div id="pageHeaderTitle" class="page-title">⚡ التغذية الإخبارية</div>
+
+                <!-- Create Post -->
+                <div class="card" id="createPostCard">
+                    <textarea id="postText" placeholder="شارك آراءك أو لقطات ألعابك اليوم..."></textarea>
+                    
+                    <div id="mediaPreview" class="hidden" style="margin-top: 10px; position: relative;">
+                        <button onclick="clearMedia()" style="position: absolute; left: 8px; top: 8px; background: var(--neon-pink); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-weight: bold;">✕</button>
+                        <img id="imgPreview" style="max-height: 180px; border-radius: 10px; display: none; width: 100%; object-fit: cover;">
+                        <video id="videoPreview" controls style="max-height: 180px; width: 100%; border-radius: 10px; display: none;"></video>
+                    </div>
+
+                    <div class="post-actions">
+                        <label style="font-size: 12px; font-weight: bold; cursor: pointer; color: var(--neon-blue);">
+                            🖼️/🎥 إضافة صورة أو فيديو
+                            <input type="file" id="mediaInput" accept="image/*,video/*" onchange="handleFile(event)" style="display: none;">
+                        </label>
+                        <button class="btn btn-neon" onclick="publishPost()" style="width: auto; padding: 8px 24px; margin: 0;">نشر 🚀</button>
+                    </div>
+                </div>
+
+                <!-- Posts Feed -->
+                <div id="postsFeed"></div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // ذاكرة مؤقتة تنقذ الكود عند حظر LocalStorage
+        let localMemory = {
+            users: [],
+            posts: [
+                {
+                    id: 101,
+                    authorId: 'usr_demo',
+                    authorName: 'CyberPlayer',
+                    text: 'أهلاً بك في شبكة NEXUS! 🚀 مرحباً بك في النسخة التجريبية، يمكنك إضافة منشورات، تعليقات، وحفظ المنشورات الآن.',
+                    media: null,
+                    mediaType: null,
+                    likedBy: [],
+                    savedBy: [],
+                    comments: [{ name: 'NEXUS Bot', text: 'مرحباً بك في المجتمعات!' }],
+                    date: 'الآن'
+                }
+            ]
+        };
+
+        function safeGet(key) {
+            try { return localStorage.getItem(key); } 
+            catch(e) { return JSON.stringify(localMemory[key] || []); }
+        }
+
+        function safeSet(key, val) {
+            try { localStorage.setItem(key, val); } 
+            catch(e) { 
+                try { localMemory[key] = JSON.parse(val); } catch(err){}
+            }
+        }
+
+        let isRegister = false;
+        let currentUser = null;
+        let currentMedia = null;
+        let currentMediaType = null;
+        let currentTab = 'feed';
+
+        // الدخول التجريبي المباشر الفوري
+        function loginDemoDirect() {
+            currentUser = {
+                id: 'usr_demo',
+                name: 'CyberPlayer',
+                email: 'demo@nexus.gg'
+            };
+            safeSet('sp_v4_current_user', JSON.stringify(currentUser));
+            
+            // إخفاء الواجهة وإظهار التطبيق فوراً بدون شروط
+            document.getElementById('authOverlay').style.display = 'none';
+            document.getElementById('mainApp').classList.remove('hidden');
+
+            document.getElementById('userName').innerText = currentUser.name;
+            document.getElementById('userAvatar').innerText = currentUser.name.charAt(0);
+
+            switchTab('feed');
+        }
+
+        function checkPassword() {
+            if (!isRegister) return true;
+            const pass = document.getElementById('authPass').value;
+            const hasLen = pass.length >= 8;
+            const hasNum = /\d/.test(pass);
+            const hasSpec = /[!@#$%^&*()]/.test(pass);
+
+            document.getElementById('rLen').className = hasLen ? 'rule-ok' : 'rule-fail';
+            document.getElementById('rNum').className = hasNum ? 'rule-ok' : 'rule-fail';
+            document.getElementById('rSpec').className = hasSpec ? 'rule-ok' : 'rule-fail';
+
+            return hasLen && hasNum && hasSpec;
+        }
+
+        function toggleAuthMode() {
+            isRegister = !isRegister;
+            document.getElementById('nameGroup').classList.toggle('hidden', !isRegister);
+            document.getElementById('passRules').classList.toggle('hidden', !isRegister);
+            document.getElementById('authBtn').innerText = isRegister ? 'إنشاء حساب جديد' : 'تسجيل الدخول';
+            document.getElementById('toggleBtn').innerText = isRegister ? 'لديك حساب بالفعل؟' : 'إنشاء حساب جديد';
+        }
+
+        function submitAuth() {
+            const email = document.getElementById('authEmail').value.trim().toLowerCase();
+            const pass = document.getElementById('authPass').value;
+            const name = document.getElementById('authName').value.trim();
+
+            if (!email || !pass) return alert('برجاء كتابة البريد ورمز الدخول');
+
+            let users = JSON.parse(safeGet('sp_v4_users') || '[]');
+
+            if (isRegister) {
+                if (!checkPassword()) return alert('كلمة السر غير مستوفية الشروط!');
+
+                const newUser = {
+                    id: 'usr_' + Date.now(),
+                    name: name || 'Gamer',
+                    email: email,
+                    pass: pass
+                };
+                users.push(newUser);
+                safeSet('sp_v4_users', JSON.stringify(users));
+                currentUser = newUser;
+            } else {
+                const user = users.find(u => u.email === email && u.pass === pass);
+                if (!user) {
+                    alert('بيانات الدخول غير صحيحة، أو لم تقم بإنشاء حساب بعد! يمكنك تجربة الدخول السريع بحساب تجريبي.');
+                    return;
+                }
+                currentUser = user;
+            }
+
+            safeSet('sp_v4_current_user', JSON.stringify(currentUser));
+            
+            document.getElementById('authOverlay').style.display = 'none';
+            document.getElementById('mainApp').classList.remove('hidden');
+            document.getElementById('userName').innerText = currentUser.name;
+            document.getElementById('userAvatar').innerText = currentUser.name.charAt(0);
+            switchTab('feed');
+        }
+
+        function logout() {
+            try { localStorage.removeItem('sp_v4_current_user'); } catch(e){}
+            location.reload();
+        }
+
+        function handleFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                currentMedia = evt.target.result;
+                document.getElementById('mediaPreview').classList.remove('hidden');
+                
+                if (file.type.startsWith('image/')) {
+                    currentMediaType = 'image';
+                    document.getElementById('imgPreview').src = currentMedia;
+                    document.getElementById('imgPreview').style.display = 'block';
+                    document.getElementById('videoPreview').style.display = 'none';
+                } else {
+                    currentMediaType = 'video';
+                    document.getElementById('videoPreview').src = currentMedia;
+                    document.getElementById('videoPreview').style.display = 'block';
+                    document.getElementById('imgPreview').style.display = 'none';
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearMedia() {
+            currentMedia = null;
+            currentMediaType = null;
+            document.getElementById('mediaInput').value = '';
+            document.getElementById('mediaPreview').classList.add('hidden');
+        }
+
+        function publishPost() {
+            const text = document.getElementById('postText').value.trim();
+            if (!text && !currentMedia) return alert('اكتب نصاً أو اختر ملفاً للنشر!');
+
+            let posts = JSON.parse(safeGet('sp_v4_posts') || '[]');
+            posts.unshift({
+                id: Date.now(),
+                authorId: currentUser.id,
+                authorName: currentUser.name,
+                text: text,
+                media: currentMedia,
+                mediaType: currentMediaType,
+                likedBy: [],
+                savedBy: [],
+                comments: [],
+                date: 'الآن'
+            });
+
+            safeSet('sp_v4_posts', JSON.stringify(posts));
+            document.getElementById('postText').value = '';
+            clearMedia();
+            renderPosts();
+        }
+
+        function toggleLike(id) {
+            let posts = JSON.parse(safeGet('sp_v4_posts') || '[]');
+            let p = posts.find(item => item.id === id);
+            if (p) {
+                p.likedBy = p.likedBy || [];
+                const idx = p.likedBy.indexOf(currentUser.id);
+                if (idx === -1) p.likedBy.push(currentUser.id);
+                else p.likedBy.splice(idx, 1);
+                safeSet('sp_v4_posts', JSON.stringify(posts));
+                renderPosts();
+            }
+        }
+
+        function toggleSave(id) {
+            let posts = JSON.parse(safeGet('sp_v4_posts') || '[]');
+            let p = posts.find(item => item.id === id);
+            if (p) {
+                p.savedBy = p.savedBy || [];
+                const idx = p.savedBy.indexOf(currentUser.id);
+                if (idx === -1) p.savedBy.push(currentUser.id);
+                else p.savedBy.splice(idx, 1);
+                safeSet('sp_v4_posts', JSON.stringify(posts));
+                renderPosts();
+            }
+        }
+
+        function addComment(id) {
+            const input = document.getElementById(`cInput-${id}`);
+            const val = input.value.trim();
+            if (!val) return;
+
+            let posts = JSON.parse(safeGet('sp_v4_posts') || '[]');
+            let p = posts.find(item => item.id === id);
+            if (p) {
+                p.comments = p.comments || [];
+                p.comments.push({ name: currentUser.name, text: val });
+                safeSet('sp_v4_posts', JSON.stringify(posts));
+                renderPosts();
+            }
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            const activeNav = document.getElementById('nav-' + tab);
+            if (activeNav) activeNav.classList.add('active');
+            
+            const titleEl = document.getElementById('pageHeaderTitle');
+            const createCard = document.getElementById('createPostCard');
+
+            if (tab === 'feed') {
+                titleEl.innerText = "⚡ التغذية الإخبارية";
+                createCard.style.display = 'block';
+            } else if (tab === 'profile') {
+                titleEl.innerText = "👤 منشوراتي الشخصية";
+                createCard.style.display = 'block';
+            } else if (tab === 'saved') {
+                titleEl.innerText = "🔖 العناصر المحفوظة";
+                createCard.style.display = 'none';
+            }
+
+            renderPosts();
+        }
+
+        function renderPosts() {
+            let posts = JSON.parse(safeGet('sp_v4_posts') || '[]');
+            
+            if (currentTab === 'profile') {
+                posts = posts.filter(p => p.authorId === currentUser.id);
+            } else if (currentTab === 'saved') {
+                posts = posts.filter(p => (p.savedBy || []).includes(currentUser.id));
+            }
+
+            const container = document.getElementById('postsFeed');
+            if (posts.length === 0) {
+                let msg = "لا توجد منشورات هنا بعد.";
+                if (currentTab === 'profile') msg = "لم تقم بنشر أي محتوى بعد.";
+                if (currentTab === 'saved') msg = "لم تقم بحفظ أي منشورات بعد.";
+                
+                container.innerHTML = `<div class="card" style="text-align: center; color: var(--text-muted); font-size: 13px;">${msg}</div>`;
+                return;
+            }
+
+            container.innerHTML = posts.map(p => {
+                const isLiked = (p.likedBy || []).includes(currentUser.id);
+                const isSaved = (p.savedBy || []).includes(currentUser.id);
+                const comments = p.comments || [];
+
+                return `
+                    <div class="card">
+                        <div class="post-header">
+                            <div class="post-author">
+                                <div class="avatar-box">${p.authorName ? p.authorName.charAt(0) : 'G'}</div>
+                                <div>
+                                    <div style="font-size: 14px; font-weight: bold; color: var(--text-main);">${p.authorName}</div>
+                                    <div style="font-size: 10px; color: var(--text-muted);">${p.date}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        ${p.text ? `<div class="post-content">${p.text}</div>` : ''}
+                        
+                        ${p.media ? (
+                            p.mediaType === 'image' 
+                            ? `<img src="${p.media}" class="post-media">`
+                            : `<video src="${p.media}" controls class="post-media"></video>`
+                        ) : ''}
+
+                        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">
+                            🔥 ${(p.likedBy || []).length} إعجاب | 💬 ${comments.length} تعليق
+                        </div>
+
+                        <div class="post-footer-btns">
+                            <button class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike(${p.id})">🔥 ${isLiked ? 'أعجبك' : 'إعجاب'}</button>
+                            <button class="action-btn" onclick="document.getElementById('cInput-${p.id}').focus()">💬 تعليق</button>
+                            <button class="action-btn" onclick="toggleSave(${p.id})">🔖 ${isSaved ? 'محفوظ' : 'حفظ'}</button>
+                        </div>
+
+                        <div class="comments-section">
+                            <div class="comment-box">
+                                <input type="text" id="cInput-${p.id}" placeholder="اكتب تعليقاً...">
+                                <button class="btn btn-neon" onclick="addComment(${p.id})" style="width: auto; padding: 6px 14px; font-size: 11px; margin: 0;">إرسال</button>
+                            </div>
+                            ${comments.map(c => `
+                                <div class="comment-item">
+                                    <strong style="color: var(--neon-blue);">${c.name}:</strong>${c.text}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    </script>
+</body>
+</html>
